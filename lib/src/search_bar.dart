@@ -6,7 +6,7 @@ import 'package:youtube_downloader_flutter/src/widgets/search_view/search_result
 import 'widgets/search_view/suggestion_list.dart';
 
 class SearchBar extends HookWidget {
-  const SearchBar({Key? key}) : super(key: key);
+  const SearchBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,37 +16,40 @@ class SearchBar extends HookWidget {
         child: Container(
           padding: const EdgeInsets.only(left: 10),
           height: kToolbarHeight,
-          child:
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                }),
-            Text(
-              'Youtube Downloader',
-              style: Theme.of(context).textTheme.headline5,
-            ),
-            Row(children: [
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  }),
+              Flexible(
+                child: Text(
+                  'Youtube Downloader',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.download_rounded),
                 onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const DownloadsPage()));
+                  Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (context) => const DownloadsPage()));
                 },
               ),
               IconButton(
                 padding: EdgeInsets.zero,
                 onPressed: () {
-                  showSearch(
-                      context: context, delegate: CustomSearchDelegate());
+                  showSearch(context: context, delegate: CustomSearchDelegate());
                 },
                 icon: const Icon(
                   Icons.search,
                 ),
-              )
-            ]),
-          ]),
+              ),
+            ],
+          ),
         ),
       ),
     );

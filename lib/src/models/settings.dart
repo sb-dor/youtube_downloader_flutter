@@ -9,11 +9,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class Settings {
   const Settings();
 
-  SettingsImpl copyWith(
-          {String? downloadPath,
-          ThemeSetting? theme,
-          String? ffmpegContainer,
-          Locale? locale}) =>
+  SettingsImpl copyWith({
+    String? downloadPath,
+    ThemeSetting? theme,
+    String? ffmpegContainer,
+    Locale? locale,
+  }) =>
       throw UnimplementedError();
 
   String get ffmpegContainer => throw UnimplementedError();
@@ -41,15 +42,16 @@ class SettingsImpl implements Settings {
   @override
   final Locale locale;
 
-  const SettingsImpl._(this._prefs, this.downloadPath, this.theme,
-      this.ffmpegContainer, this.locale);
+  const SettingsImpl._(
+      this._prefs, this.downloadPath, this.theme, this.ffmpegContainer, this.locale);
 
   @override
-  SettingsImpl copyWith(
-      {String? downloadPath,
-      ThemeSetting? theme,
-      String? ffmpegContainer,
-      Locale? locale}) {
+  SettingsImpl copyWith({
+    String? downloadPath,
+    ThemeSetting? theme,
+    String? ffmpegContainer,
+    Locale? locale,
+  }) {
     if (downloadPath != null) {
       _prefs.setString('download_path', downloadPath);
     }
@@ -63,39 +65,40 @@ class SettingsImpl implements Settings {
       _prefs.setString('locale', locale.languageCode);
     }
 
-    return SettingsImpl._(
-        _prefs,
-        downloadPath ?? this.downloadPath,
-        theme ?? this.theme,
-        ffmpegContainer ?? this.ffmpegContainer,
-        locale ?? this.locale);
+    return SettingsImpl._(_prefs, downloadPath ?? this.downloadPath, theme ?? this.theme,
+        ffmpegContainer ?? this.ffmpegContainer, locale ?? this.locale);
   }
 
   static Future<SettingsImpl> init(SharedPreferences prefs) async {
     var path = prefs.getString('download_path');
     if (path == null) {
       path = (await getDefaultDownloadDir()).path;
-      prefs.setString('download_path', path);
+      await prefs.setString('download_path', path);
     }
     var themeId = prefs.getInt('theme_id');
     if (themeId == null) {
       themeId = 0;
-      prefs.setInt('theme_id', 0);
+      await prefs.setInt('theme_id', 0);
     }
     var ffmpegContainer = prefs.getString('ffmpeg_container');
     if (ffmpegContainer == null) {
       ffmpegContainer = '.mp4';
-      prefs.setString('ffmpeg_container', '.mp4');
+      await prefs.setString('ffmpeg_container', '.mp4');
     }
 
     var langCode = prefs.getString('locale');
     if (langCode == null) {
-      final defaultLang = WidgetsBinding.instance!.window.locales.first;
+      final defaultLang = WidgetsBinding.instance.window.locales.first;
       langCode = defaultLang.languageCode;
-      prefs.setString('locale', defaultLang.languageCode);
+      await prefs.setString('locale', defaultLang.languageCode);
     }
-    return SettingsImpl._(prefs, path, ThemeSetting.fromId(themeId),
-        ffmpegContainer, Locale(langCode));
+    return SettingsImpl._(
+      prefs,
+      path,
+      ThemeSetting.fromId(themeId),
+      ffmpegContainer,
+      Locale(langCode),
+    );
   }
 }
 
@@ -149,14 +152,16 @@ class ThemeSetting {
 
 Future<Directory> getDefaultDownloadDir() async {
   if (Platform.isAndroid) {
-    final paths =
-        await getExternalStorageDirectories(type: StorageDirectory.music);
+    final paths = await getExternalStorageDirectories(type: StorageDirectory.music);
     return paths!.first;
+  }
+  if (Platform.isIOS) {
+    final paths = await getApplicationDocumentsDirectory();
+    return paths;
   }
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
     final path = await getDownloadsDirectory();
     return path!;
   }
-  throw UnsupportedError(
-      'Platform: ${Platform.operatingSystem} is not supported!');
+  throw UnsupportedError('Platform: ${Platform.operatingSystem} is not supported!');
 }

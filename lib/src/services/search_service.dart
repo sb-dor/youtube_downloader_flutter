@@ -117,10 +117,10 @@ class _VideoSearchServiceImpl extends ChangeNotifier implements SearchService {
   UnmodifiableListView<QueryVideo> get videos => UnmodifiableListView(_videos);
 
   var _endResults = false;
-  late SearchList _currentPage;
+  late VideoSearchList _currentPage;
 
   _VideoSearchServiceImpl(this.yt, this.query) {
-    yt.search.getVideos(query).then((value) {
+    yt.search.search(query).then((value) {
       _videos.addAll(value.where((e) => !e.isLive).map((e) => QueryVideo(
           e.title,
           e.id.value,

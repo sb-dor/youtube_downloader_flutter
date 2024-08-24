@@ -4,7 +4,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'settings_page.dart';
 
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({Key? key}) : super(key: key);
+  const AppDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,8 +19,11 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.settings),
             onTap: () {
               //Todo: Replace Route with named route or Navigator2
-              Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => SettingsPage()));
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SettingsPage(),
+                ),
+              );
             },
           )
         ],

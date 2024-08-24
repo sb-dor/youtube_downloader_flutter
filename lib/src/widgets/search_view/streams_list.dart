@@ -4,15 +4,17 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:youtube_downloader_flutter/src/models/download_manager.dart';
 import 'package:youtube_downloader_flutter/src/models/query_video.dart';
+import 'package:youtube_downloader_flutter/src/providers.dart';
+import 'package:youtube_downloader_flutter/src/providers/downloads_manager_provider/downloads_manager_provider.dart';
+import 'package:youtube_downloader_flutter/src/providers/downloads_page_provider/downloads_page_provider.dart';
+import 'package:youtube_downloader_flutter/src/providers/settings_provider/settings_provider.dart';
+import 'package:youtube_downloader_flutter/src/shared.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-
-import '../../providers.dart';
-import '../../shared.dart';
 
 class StreamsList extends HookConsumerWidget {
   final QueryVideo video;
 
-  StreamsList(this.video, {Key? key}) : super(key: key);
+  StreamsList(this.video, {super.key});
 
   static const List<DropdownMenuItem<Filter>> items = [
     DropdownMenuItem(
@@ -38,16 +40,15 @@ class StreamsList extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final yt = ref.watch(ytProvider);
-    final settings = ref.watch(settingsProvider).state;
-    final downloadManager = ref.watch(downloadProvider).state;
+    final settings = ref.watch(settingProviderWithStateNotifierProvider);
+    final downloadPage = ref.watch(downloadsPageProviderWithStateNotifierProvider);
+    // final downloadManager = ref.watch(downloadsProviderWithStateNotifierProvider);
 
     final filter = useState(Filter.all);
     final merger = useListenable(mergeTracks);
 
-    final manifest = useMemoFuture(
-        () => yt.videos.streamsClient.getManifest(video.id),
-        initialData: null,
-        keys: [video.id]);
+    final manifest = useMemoFuture(() => yt.videos.streamsClient.getManifest(video.id),
+        initialData: null, keys: [video.id]);
 
     if (!manifest.hasData) {
       return const Center(child: CircularProgressIndicator());
@@ -74,13 +75,21 @@ class StreamsList extends HookConsumerWidget {
               if (stream is MuxedStreamInfo) {
                 return MaterialButton(
                   onPressed: () {
-                    downloadManager.downloadStream(yt, video, settings,
-                        StreamType.video, AppLocalizations.of(context)!,
-                        singleStream: stream);
+                    // debugPrint(
+                    //     "downloading manager type is: ${downloadsProviderWithStateNotifierProvider.runtimeType}");
+                    ref.read(downloadsManagerProviderWithStateNotifierProvider).downloadStream(
+                          yt,
+                          video,
+                          settings,
+                          StreamType.video,
+                          AppLocalizations.of(context)!,
+                          singleStream: stream,
+                          ref: ref,
+                        );
                   },
                   child: ListTile(
                     subtitle: Text(
-                        '${stream.videoQualityLabel} - ${stream.videoCodec} | ${stream.audioCodec}'),
+                        '${stream.qualityLabel} - ${stream.videoCodec} | ${stream.audioCodec}'),
                     title: Text(
                         'Video + Audio (.${stream.container}) - ${bytesToString(stream.size.totalBytes)}'),
                   ),
@@ -92,17 +101,21 @@ class StreamsList extends HookConsumerWidget {
                     merger.video = stream;
                   },
                   onPressed: () {
-                    downloadManager.downloadStream(yt, video, settings,
-                        StreamType.video, AppLocalizations.of(context)!,
-                        singleStream: stream);
+                    ref.read(downloadsManagerProviderWithStateNotifierProvider).downloadStream(
+                          yt,
+                          video,
+                          settings,
+                          StreamType.video,
+                          AppLocalizations.of(context)!,
+                          singleStream: stream,
+                          ref: ref,
+                        );
                   },
                   child: ListTile(
-                    subtitle: Text(
-                        '${stream.videoQualityLabel} - ${stream.videoCodec}'),
+                    subtitle: Text('${stream.videoQualityLabel} - ${stream.videoCodec}'),
                     title: Text(
                         'Video Only (.${stream.container}) - ${bytesToString(stream.size.totalBytes)}'),
-                    trailing:
-                        stream == merger.video ? const Icon(Icons.done) : null,
+                    trailing: stream == merger.video ? const Icon(Icons.done) : null,
                   ),
                 );
               }
@@ -112,36 +125,46 @@ class StreamsList extends HookConsumerWidget {
                     merger.audio = stream;
                   },
                   onPressed: () {
-                    downloadManager.downloadStream(yt, video, settings,
-                        StreamType.audio, AppLocalizations.of(context)!,
-                        singleStream: stream);
+                    ref.read(downloadsManagerProviderWithStateNotifierProvider).downloadStream(
+                          yt,
+                          video,
+                          settings,
+                          StreamType.audio,
+                          AppLocalizations.of(context)!,
+                          singleStream: stream,
+                          ref: ref,
+                        );
                   },
                   child: ListTile(
-                    subtitle: Text(
-                        '${stream.audioCodec} | Bitrate: ${stream.bitrate}'),
+                    subtitle: Text('${stream.audioCodec} | Bitrate: ${stream.bitrate}'),
                     title: Text(
                         'Audio Only (.${stream.container}) - ${bytesToString(stream.size.totalBytes)}'),
-                    trailing:
-                        stream == merger.audio ? const Icon(Icons.done) : null,
+                    trailing: stream == merger.audio ? const Icon(Icons.done) : null,
                   ),
                 );
               }
-              return ListTile(
-                  title: Text('${stream.container} ${stream.runtimeType}'));
+              return ListTile(title: Text('${stream.container} ${stream.runtimeType}'));
             }),
       ),
       actions: <Widget>[
         if (merger.audio != null && merger.video != null)
           OutlinedButton(
               style: ButtonStyle(
-                  padding: MaterialStateProperty.all<EdgeInsets>(
-                      const EdgeInsets.all(20))),
+                  padding: WidgetStateProperty.all<EdgeInsets>(const EdgeInsets.all(20))),
               onPressed: () {
-                downloadManager.downloadStream(yt, video, settings,
-                    StreamType.video, AppLocalizations.of(context)!,
-                    merger: merger, ffmpegContainer: settings.ffmpegContainer);
+                ref.read(downloadsManagerProviderWithStateNotifierProvider).downloadStream(
+                      yt,
+                      video,
+                      settings,
+                      StreamType.video,
+                      AppLocalizations.of(context)!,
+                      merger: merger,
+                      ffmpegContainer: settings.ffmpegContainer,
+                      ref: ref,
+                    );
               },
               child: const Text('Download & Merge tracks!')),
+        Text("page of list: ${downloadPage.length}"),
         DropdownButton<Filter>(
           value: filter.value,
           items: items,
