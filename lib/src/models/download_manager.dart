@@ -9,6 +9,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:youtube_downloader_flutter/main.dart';
@@ -193,10 +194,14 @@ class DownloadManager extends ChangeNotifier with PermissionsService {
     AppLocalizations localizations,
     WidgetRef ref,
   ) async {
+    final tempPath = path.join(saveDir, 'Unconfirmed_$id.ytdownload');
+
+    // if (!Directory(tempPath).existsSync()) {
+    //   Directory(tempPath).createSync();
+    // }
+
     final downloadPath = await getValidPath(
         '${path.join(saveDir, video.title.replaceAll(invalidChars, '_'))}${'.${stream.container.name}'}');
-
-    final tempPath = path.join(saveDir, 'Unconfirmed $id.ytdownload');
 
     final file = File(tempPath);
     final sink = file.openWrite();
@@ -209,8 +214,9 @@ class DownloadManager extends ChangeNotifier with PermissionsService {
     addVideo(downloadVideo);
     ref.read(downloadsPageProviderWithStateNotifierProvider.notifier).addVideo(downloadVideo);
 
-    final sub = dataStream.listen((data) => handleData(data, sink, downloadVideo),
-        onError: (error, __) async {
+    final sub = dataStream.listen((data) {
+      handleData(data, sink, downloadVideo);
+    }, onError: (error, __) async {
       showSnackbar(SnackBar(content: Text(localizations.failDownload(video.title))));
       await cleanUp(sink, file);
       downloadVideo.downloadStatus = DownloadStatus.failed;
@@ -248,6 +254,10 @@ class DownloadManager extends ChangeNotifier with PermissionsService {
     AppLocalizations localizations,
     WidgetRef ref,
   ) async {
+    if (!Directory(saveDir).existsSync()) {
+      Directory(saveDir).createSync();
+    }
+
     final downloadPath = await getValidPath(
         '${path.join(settings.downloadPath, video.title.replaceAll(invalidChars, '_'))}$ffmpegContainer');
 
@@ -492,10 +502,10 @@ class DownloadManager extends ChangeNotifier with PermissionsService {
   Future<String?> cleanUp(IOSink sink, File file, [String? path]) async {
     await sink.flush();
     await sink.close();
-    if (path != null) {
+    if (path != null && Directory(path).existsSync()) {
       // ignore: parameter_assignments
-      path = await getValidPath(ReusableFunctions.removeSpaceFromStringForDownloadingVideo(path));
-      await file.rename(ReusableFunctions.removeSpaceFromStringForDownloadingVideo(path));
+      path = await getValidPath(path);
+      await file.rename(path);
       return path;
     }
     await file.delete();

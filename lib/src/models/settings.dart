@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -160,7 +161,7 @@ Future<Directory> getDefaultDownloadDir() async {
     return paths;
   }
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
-    final path = await getDownloadsDirectory();
+    final path = await DownloadsPath.downloadsDirectory();
     return path!;
   }
   throw UnsupportedError('Platform: ${Platform.operatingSystem} is not supported!');
