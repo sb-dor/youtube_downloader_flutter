@@ -11,4 +11,3 @@ final ytProvider = Provider<YoutubeExplode>((ref) => YoutubeExplode(),
 // final downloadProvider = StateProvider<DownloadManager>(
 //     (ref) => DownloadManager(),
 //     name: 'DownloadManager Provider');
-
